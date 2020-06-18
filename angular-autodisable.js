@@ -1,6 +1,6 @@
 /* 
- * angular-autodisable 0.2.3
- * http://github.com/kirstein/angular-autodisable
+ * angular-autodisable 0.3.0
+ * http://github.com/gardner/angular-autodisable
  * 
  * Licensed under the MIT license
  */
@@ -28,15 +28,13 @@
 
     /**
      * Validates if the given promise is really a promise that we can use.
-     * Out promises must have at least `then` and `finally` functions
+     * Out promises must have at least `then` function
      *
      * @param {Object} promise promise to test
      * @return {Boolean} true if its a promise, otherwise false
      */
     function isPromise(promise) {
-      return promise                          &&
-             angular.isFunction(promise.then) &&
-             angular.isFunction(promise['finally']);
+      return promise && angular.isFunction(promise.then);
     }
 
     /**
@@ -70,24 +68,34 @@
       var handler;
 
       if (attrs.hasOwnProperty(CLICK_ATTR)) {
-          handler = handlerInstance(element,
-              CLICK_EVENT,
-              getLoadingClass(attrs),
-              getCallbacks(attrs[CLICK_ATTR]));
+        handler= handlerInstance([element],
+            CLICK_EVENT,
+            getLoadingClass(attrs),
+            getCallbacks(attrs[CLICK_ATTR]));
       } else if (attrs.hasOwnProperty(SUBMIT_ATTR)) {
-          handler = handlerInstance($("button[type=submit]", element),
-              SUBMIT_EVENT,
-              getLoadingClass(attrs),
-              getCallbacks(attrs[SUBMIT_ATTR]));
+        var buttons = element.find('button');
+        if (buttons.length === 0) {
+          throw new Error('ngAutodisable on a from requires buttons with \'type="submit"\'');
+        }
+        var submitButtons = [];
+        angular.forEach(buttons, function (button) {
+          if (button.type === SUBMIT_EVENT) {
+            submitButtons.push(angular.element(button));
+          }
+        });
+        handler = handlerInstance(submitButtons,
+            SUBMIT_EVENT,
+            getLoadingClass(attrs),
+            getCallbacks(attrs[SUBMIT_ATTR]));
       } else {
-          throw new Error('ngAutodisable requires ngClick or ngSubmit attribute in order to work');
+        throw new Error('ngAutodisable requires ngClick or ngSubmit attribute in order to work');
       }
 
       // Remove the click handler and replace it with our new one
       // with this move we completely disable the original ngClick functionality
-      element.unbind(handler.eventName).bind(handler.eventName, function(event) {
+      element.unbind(handler.eventName).bind(handler.eventName, function (event) {
         // Make sure we run the $digest cycle
-        scope.$apply(function() {
+        scope.$apply(function () {
           handler.callbacks.forEach(triggerHandler.bind(null, handler, scope, event));
         });
       });
@@ -109,13 +117,13 @@
      * It will disable the given element when the first promise is triggered. And will
      * re-enable the element, when the last promise is finished.
      *
-     * @param  {Element} elementToDisable     DOM element that should be enabled and disabled.
+     * @param  {Element}[] elementsToDisable  DOM elements that should be enabled and disabled.
      * @param  {String} eventName             Name of the event ('click' or 'submit')
      * @param  {String|Boolean} loadingClass  Class(es) to toggle to the element or false not desired.
      * @param  {Array} callbacks              Array of callback functions to trigger.
      * @return {Object}                       Object that handles the promises.
      */
-    function handlerInstance(elementToDisable, eventName, loadingClass, callbacks) {
+    function handlerInstance(elementsToDisable, eventName, loadingClass, callbacks) {
       var instance = {},
           promisesTriggered = 0;
 
@@ -132,13 +140,12 @@
        */
       instance.handlePromise = function(promise) {
         if (promisesTriggered === 0) {
-          disableElement();
+          disableElements();
         }
         promisesTriggered++;
 
-        promise['finally'](function() {
-          promiseDone();
-        });
+        promise
+          .then(promiseDone, promiseDone);
       };
 
       /**
@@ -149,7 +156,7 @@
       function promiseDone() {
         promisesTriggered--;
         if (promisesTriggered === 0) {
-          enableElement();
+          enableElements();
         }
       }
 
@@ -157,22 +164,26 @@
        * Disables the element. It can also add the classes listed by
        * loadingClass.
        */
-      function disableElement() {
-        elementToDisable.attr(DISABLED, true);
-        if (loadingClass) {
-          elementToDisable.addClass(loadingClass);
-        }
+      function disableElements() {
+        angular.forEach(elementsToDisable, function(elementToDisable) {
+          elementToDisable.attr(DISABLED, true);
+          if (loadingClass) {
+            elementToDisable.addClass(loadingClass);
+          }
+        });
       }
 
       /**
        * Enables the element. It can also remove the classes listed by
        * loadingClass.
        */
-      function enableElement() {
-        elementToDisable.attr(DISABLED, false);
-        if (loadingClass) {
-          elementToDisable.removeClass(loadingClass);
-        }
+      function enableElements() {
+        angular.forEach(elementsToDisable, function (elementToDisable) {
+          elementToDisable.attr(DISABLED, false);
+          if (loadingClass) {
+            elementToDisable.removeClass(loadingClass);
+          }
+        });
       }
 
       return instance;
