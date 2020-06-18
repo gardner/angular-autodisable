@@ -40,10 +40,9 @@ module.exports = function( grunt ) {
 
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-karma');
+  // grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-banner');
-
-  grunt.registerTask('test', [ 'karma' ]);
-  grunt.registerTask('build', [ 'test', 'copy', 'uglify', 'usebanner' ]);
+  // grunt.registerTask('test', [ 'karma' ]);
+  grunt.registerTask('build', [ 'copy', 'uglify', 'usebanner' ]);
   grunt.registerTask('default', [ 'build' ]);
 };
