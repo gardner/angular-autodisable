@@ -1,6 +1,6 @@
 {
   "name": "angular-autodisable",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Angular directive that extends ngClick behaviour allowing it to automatically disable target element if the handler returns a promise",
   "homepage": "http://github.com/gardner/angular-autodisable",
   "directories": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kirstein/angular-autodisable.git"
+    "url": "https://github.com/gardner/angular-autodisable.git"
   },
   "author": "Mikk Kirstein",
   "license": "MIT",
